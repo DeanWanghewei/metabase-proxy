@@ -1,0 +1,79 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>org.wei.metabase-proxy</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>Metabase-proxy</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor url="https://www.wangzipei.cn">org.wei</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[
+    metabase 的idea 本地代理查询插件.<br>
+    可以通过本地登陆metabase 后直接查询数据.
+
+    📦 Metabase Proxy 插件
+      使用方法:
+      1. 在setting中填写Metabase地址和用户和地址
+      2. 选中要执行的SQL.右键执行选择 Run Metabase Query 执行选中的SQL
+      3. 选中要执行的SQL.使用快捷键执行.
+      4. 插件会自动保存参数.下次执行会自动使用上次的参数.
+
+      ⚠️ 注意: 插件查询是同步执行的.所以请不要在SQL中执行耗时操作.!!!
+  ]]></description>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="org.wei.metabaseproxy.config.SettingsState"/>
+        <applicationConfigurable instance="org.wei.metabaseproxy.config.MetabaseSettingsConfigurable"/>
+        <applicationService serviceImplementation="org.wei.metabaseproxy.service.MetabaseProxyService"/>
+    </extensions>
+
+
+    <actions>
+        <group id="metabase-proxy" text="MetabaseProxy">
+            <add-to-group group-id="MainMenu" anchor="last"/>
+        </group>
+
+        <!-- 右键菜单入口 -->
+        <group id="metabase-proxy-right-click" text="MetabaseProxy Run Click" description="Metabase Proxy 右键菜单">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </group>
+
+        <!-- 定义右键菜单项 -->
+        <action id="metabase-proxy.run-query-action"
+                class="org.wei.metabaseproxy.actions.MetabaseProxyQueryAction"
+                text="Run Metabase Query"
+                description="通过本地代理查询 Metabase 数据">
+            <add-to-group group-id="metabase-proxy-right-click" anchor="first"/>
+            <!-- 绑定快捷键 Option+Shift+Enter -->
+            <keyboard-shortcut keymap="$default" first-keystroke="shift meta ENTER"/>
+
+        </action>
+
+        <!-- 定义右键菜单项 -->
+        <action id="metabase-proxy.run-query-full-action"
+                class="org.wei.metabaseproxy.actions.MetabaseProxyQueryDialogAction"
+                text="Run Metabase Query Full"
+                description="通过本地代理查询 Metabase 数据,并且主动弹出参数配置">
+            <add-to-group group-id="metabase-proxy-right-click" anchor="first"/>
+            <!-- 绑定快捷键 Option+Shift+Enter -->
+            <keyboard-shortcut keymap="$default" first-keystroke="shift control meta  ENTER"/>
+
+        </action>
+    </actions>
+
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+
+    </extensions>
+</idea-plugin>
