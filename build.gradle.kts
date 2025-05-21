@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.wei"
-version = "1.4"
+version = "1.5"
 
 repositories {
     mavenCentral()
@@ -32,6 +32,10 @@ intellijPlatform {
             untilBuild = ""
         }
         changeNotes = """
+        <h2>1.5</h2>
+        <ul>
+            <li>修改配置项保存为项目级别</li>
+        </ul>
         <h2>1.4</h2>
         <ul>
             <li>查询历史可通过tab 页手动关闭.新的查询会放到第一个tab</li>

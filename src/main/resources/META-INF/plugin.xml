@@ -27,9 +27,10 @@
   ]]></description>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="org.wei.metabaseproxy.config.SettingsState"/>
-        <applicationConfigurable instance="org.wei.metabaseproxy.config.MetabaseSettingsConfigurable"/>
-        <applicationService serviceImplementation="org.wei.metabaseproxy.service.MetabaseProxyService"/>
+        <projectConfigurable
+                instance="org.wei.metabaseproxy.config.MetabaseSettingsConfigurable"
+                displayName="Metabase Proxy Settings"
+        />
     </extensions>
 
 

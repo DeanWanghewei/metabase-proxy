@@ -1,6 +1,6 @@
 package org.wei.metabaseproxy.service;
 
-import org.wei.metabaseproxy.config.SettingsState;
+import com.intellij.openapi.components.Service;
 import org.wei.metabaseproxy.metabase.*;
 import org.wei.metabaseproxy.model.DatabaseModel;
 import org.wei.metabaseproxy.model.LoginUserModel;
@@ -13,7 +13,8 @@ import java.util.List;
  * @description
  * @date 2025年05月19日 11:03
  */
-public class MetabaseProxyService {
+@Service(Service.Level.PROJECT)
+public final class MetabaseProxyService {
     private boolean isLoggedIn = false;
     private MetabaseClient metabaseClient = null;
     private ResponseCurrentUser currentUserName = null;
@@ -30,9 +31,6 @@ public class MetabaseProxyService {
         LoginUserModel loginUserModel = callLoginApi(username, password, serverUrl);
         if (loginUserModel.isSuccess()) {
             this.isLoggedIn = true;
-            SettingsState.getInstance().setUsername(username);
-            SettingsState.getInstance().setPassword(password);
-            SettingsState.getInstance().setServerUrl(serverUrl);
             return loginUserModel;
         }
         return loginUserModel;
@@ -52,14 +50,6 @@ public class MetabaseProxyService {
         }
     }
 
-    public void autoLoginIfPossible() {
-        String username = SettingsState.getInstance().getUsername();
-        String password = SettingsState.getInstance().getPassword();
-        String serverUrl = SettingsState.getInstance().getServerUrl();
-        if (!username.isEmpty() && !password.isEmpty() && !serverUrl.isEmpty()) {
-            login(username, password, serverUrl);
-        }
-    }
 
     private LoginUserModel callLoginApi(String username, String password, String serverUrl) {
         // 这里实现实际的网络请求逻辑，例如使用 HttpClient 或 OkHttp 请求 Metabase 登录接口
@@ -73,12 +63,6 @@ public class MetabaseProxyService {
         }
         return metabaseClient;
     }
-
-    public void logout() {
-        this.isLoggedIn = false;
-        SettingsState.getInstance().setPassword("");
-    }
-
 
     public boolean isLoggedIn() {
         return isLoggedIn;

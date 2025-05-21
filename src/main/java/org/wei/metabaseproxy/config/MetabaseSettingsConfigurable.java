@@ -1,9 +1,11 @@
 package org.wei.metabaseproxy.config;
 
-import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.openapi.options.SearchableConfigurable;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.NlsContexts;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.wei.metabaseproxy.model.LoginUserModel;
 import org.wei.metabaseproxy.service.MetabaseProxyService;
@@ -17,14 +19,23 @@ import java.awt.*;
  * 创建一个实现 com.intellij.openapi.options.Configurable 的类，用于提供设置界面。
  * @date 2025年05月19日 11:08
  */
-public class MetabaseSettingsConfigurable implements Configurable {
+public class MetabaseSettingsConfigurable implements SearchableConfigurable {
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JTextField serverUrlField;
     private JButton loginButton;
     private JLabel statusLabel;
 
-    private final MetabaseProxyService userService = ServiceManager.getService(MetabaseProxyService.class);
+
+    private final Project project;
+    private final MetabaseProxyService userService;
+
+
+    // IDEA 注入
+    public MetabaseSettingsConfigurable(Project project) {
+        this.project = project;
+        this.userService = project.getService(MetabaseProxyService.class);
+    }
 
     @Override
     public @NlsContexts.ConfigurableName String getDisplayName() {
@@ -145,27 +156,32 @@ public class MetabaseSettingsConfigurable implements Configurable {
     @Override
     public boolean isModified() {
         // 判断是否内容有变化，用于“Apply”按钮的启用状态
-        return !usernameField.getText().equals(SettingsState.getInstance().getUsername())
-                || !new String(passwordField.getPassword()).equals(SettingsState.getInstance().getPassword())
-                || !serverUrlField.getText().equals(SettingsState.getInstance().getServerUrl())
+        return !usernameField.getText().equals(SettingsState.getInstance(project).getUsername())
+                || !new String(passwordField.getPassword()).equals(SettingsState.getInstance(project).getPassword())
+                || !serverUrlField.getText().equals(SettingsState.getInstance(project).getServerUrl())
                 ;
     }
 
     @Override
     public void apply() throws ConfigurationException {
-        SettingsState.getInstance().setUsername(usernameField.getText());
-        SettingsState.getInstance().setPassword(new String(passwordField.getPassword()));
-        SettingsState.getInstance().setServerUrl(serverUrlField.getText());
+        SettingsState.getInstance(project).setUsername(usernameField.getText());
+        SettingsState.getInstance(project).setPassword(new String(passwordField.getPassword()));
+        SettingsState.getInstance(project).setServerUrl(serverUrlField.getText());
     }
 
     @Override
     public void reset() {
-        usernameField.setText(SettingsState.getInstance().getUsername());
-        passwordField.setText(SettingsState.getInstance().getPassword());
-        serverUrlField.setText(SettingsState.getInstance().getServerUrl());
+        usernameField.setText(SettingsState.getInstance(project).getUsername());
+        passwordField.setText(SettingsState.getInstance(project).getPassword());
+        serverUrlField.setText(SettingsState.getInstance(project).getServerUrl());
     }
 
     @Override
     public void disposeUIResources() {
+    }
+
+    @Override
+    public @NotNull @NonNls String getId() {
+        return "metabaseProxy.settings";
     }
 }

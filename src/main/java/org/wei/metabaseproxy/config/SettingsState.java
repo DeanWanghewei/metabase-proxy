@@ -4,8 +4,6 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.project.Project;
-import com.intellij.serialization.Property;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,14 +20,15 @@ import org.jetbrains.annotations.NotNull;
         storages = @Storage("orgWeiMetabaseProxySetting.xml")
 )
 public final class SettingsState implements PersistentStateComponent<SettingsState> {
-    private static final SettingsState INSTANCE = new SettingsState();
 
     private String username = "";
     private String password = "";
     private String serverUrl = "";
 
-    public static SettingsState getInstance() {
-        return INSTANCE;
+
+    // 注入方式获取实例（推荐）
+    public static SettingsState getInstance(@NotNull com.intellij.openapi.project.Project project) {
+        return project.getService(SettingsState.class);
     }
 
 
