@@ -10,8 +10,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * @author deanwanghewei@gmail.com
  *  description
- * 使用 PersistentStateComponent 来保存用户输入的用户名和密码
  * 使用 PersistentStateComponent 和 @Service 来保存用户设置
+ * 来保存用户输入的用户名和密码
  * @date 2025年05月19日 11:14
  */
 @Service(Service.Level.PROJECT)
