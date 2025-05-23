@@ -37,7 +37,6 @@ import java.util.regex.Pattern;
 public class MetabaseProxyQueryAction extends AnAction {
 
     protected static final Pattern VAR_PATTERN = Pattern.compile("\\$\\{([^}])*}");
-    protected final MetabaseProxyService proxyService = ServiceManager.getService(MetabaseProxyService.class);
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
@@ -53,6 +52,14 @@ public class MetabaseProxyQueryAction extends AnAction {
      * @return
      */
     protected void doAction(@NotNull AnActionEvent anActionEvent, boolean defaultShowDialog) {
+        Project project = anActionEvent.getProject();
+        if (project == null) {
+            Messages.showErrorDialog("无法获取项目信息", "错误");
+            return;
+        }
+
+        MetabaseProxyService proxyService = project.getService(MetabaseProxyService.class);
+
         // 获取用户选中的内容
         String selectedText = getQuerySql(anActionEvent);
         if (selectedText == null || selectedText.isEmpty()) {
@@ -88,7 +95,8 @@ public class MetabaseProxyQueryAction extends AnAction {
             runSqlParamsModel.setUserInputVarList(notCacheVarList);
             runSqlParamsModel.setUserVarMap(varCache);
 
-            RunSqlParamsDialog dialog = new RunSqlParamsDialog(anActionEvent.getProject(), runSqlParamsModel, databaseModelList);
+            RunSqlParamsDialog dialog = new RunSqlParamsDialog(anActionEvent.getProject(), runSqlParamsModel,
+                    databaseModelList);
             dialog.show();
 
             if (dialog.getExitCode() != DialogWrapper.OK_EXIT_CODE) {
@@ -106,31 +114,31 @@ public class MetabaseProxyQueryAction extends AnAction {
         }
 
         QueryResultShowDialog queryResultShowDialog = new QueryResultShowDialog();
-        Project project = anActionEvent.getProject();
         String finalSelectedText = formatSql(selectedText);
         DatabaseModel finalCacheDatabase = cacheDatabase;
+        final MetabaseProxyService finalProxyService = proxyService;
         // 先显示控制台
-        QueryConsoleState consoleState = queryResultShowDialog.showInitConsole(anActionEvent.getProject(), finalCacheDatabase, finalSelectedText);
+        QueryConsoleState consoleState = queryResultShowDialog.showInitConsole(anActionEvent.getProject(),
+                finalCacheDatabase, finalSelectedText);
 
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Metabase Proxy Query") {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 try {
                     // 执行耗时网络请求
-                    QueryResultModel resultModel = proxyService.query(finalSelectedText, finalCacheDatabase.getId());
+                    QueryResultModel resultModel = finalProxyService.query(finalSelectedText,
+                            finalCacheDatabase.getId());
 
                     // 回到 UI 线程更新内容
-                    ApplicationManager.getApplication().invokeLater(() ->
-                            queryResultShowDialog.showResult(anActionEvent.getProject(), consoleState, resultModel));
+                    ApplicationManager.getApplication().invokeLater(() -> queryResultShowDialog
+                            .showResult(anActionEvent.getProject(), consoleState, resultModel));
                 } catch (Exception e) {
-                    ApplicationManager.getApplication().invokeLater(() ->
-                            queryResultShowDialog.showError(anActionEvent.getProject(), consoleState, "查询失败错误: " + e.getMessage())
-                    );
+                    ApplicationManager.getApplication().invokeLater(() -> queryResultShowDialog
+                            .showError(anActionEvent.getProject(), consoleState, "查询失败错误: " + e.getMessage()));
                 }
             }
         });
     }
-
 
     protected String getQuerySql(AnActionEvent event) {
         String userSelect = getUserSelect(event);
@@ -157,7 +165,7 @@ public class MetabaseProxyQueryAction extends AnAction {
 
     private String getRangeText(int delimiterLineIndex, PsiFile currentFile) {
         String text = currentFile.getText();
-        // 以delimiterLineIndex 为中心,  向左向右查找 ;
+        // 以delimiterLineIndex 为中心, 向左向右查找 ;
         int left = delimiterLineIndex;
         int right = delimiterLineIndex;
         while (left >= 0 && right < text.length()) {

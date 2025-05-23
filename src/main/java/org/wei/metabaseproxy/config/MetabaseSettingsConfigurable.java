@@ -15,8 +15,8 @@ import java.awt.*;
 
 /**
  * @author deanwanghewei@gmail.com
- * description
- * 创建一个实现 com.intellij.openapi.options.Configurable 的类，用于提供设置界面。
+ *         description
+ *         创建一个实现 com.intellij.openapi.options.Configurable 的类，用于提供设置界面。
  * @date 2025年05月19日 11:08
  */
 public class MetabaseSettingsConfigurable implements SearchableConfigurable {
@@ -26,10 +26,8 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
     private JButton loginButton;
     private JLabel statusLabel;
 
-
     private final Project project;
     private final MetabaseProxyService userService;
-
 
     // IDEA 注入
     public MetabaseSettingsConfigurable(Project project) {
@@ -48,7 +46,6 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(2, 5, 5, 5); // 设置组件之间的间距
-
 
         // 标题部分
         gbc.gridx = 0;
@@ -70,7 +67,8 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         // 用户名说明
         gbc.gridy++;
         gbc.gridx = 1;
-        JLabel userNote = new JLabel("<html><small>New user name will be applied for all new sessions after restart</small></html>");
+        JLabel userNote = new JLabel(
+                "<html><small>New user name will be applied for all new sessions after restart</small></html>");
         panel.add(userNote, gbc);
 
         // 密码输入
@@ -81,7 +79,6 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         passwordField = new JPasswordField(40);
         panel.add(passwordField, gbc);
 
-
         // 服务器URL
         gbc.gridy++;
         gbc.gridwidth = 1;
@@ -91,19 +88,21 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         gbc.gridx = 1;
         panel.add(serverUrlField, gbc);
 
-
         // 登录按钮
         gbc.gridy++;
         gbc.gridx = 0;
         gbc.gridwidth = 2; // 横跨两列
         loginButton = new JButton("Login");
-        loginButton.addActionListener(e -> performLogin());
+        loginButton.addActionListener(e -> performLoginOrLogout());
         panel.add(loginButton, gbc);
 
         // 状态标签
         gbc.gridy++;
         statusLabel = new JLabel(getStatusText());
         panel.add(statusLabel, gbc);
+
+        // 初始化按钮状态
+        updateButtonState();
 
         // 分隔线
         gbc.gridy++;
@@ -122,26 +121,34 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         return panel;
     }
 
-    private void performLogin() {
-        String username = usernameField.getText();
-        String password = new String(passwordField.getPassword());
-        String serverUrl = this.serverUrlField.getText();
-        if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
-            statusLabel.setText("❌ Server URL must start with http:// or https://");
-            return;
-        }
-        if (username.isEmpty() || password.isEmpty()) {
-            statusLabel.setText("❌ Username or password cannot be empty.");
-            return;
-        }
-
-
-        LoginUserModel loginUserModel = userService.login(username, password, serverUrl);
-        if (loginUserModel.isSuccess()) {
-            userService.refreshCurrentUserName();
-            statusLabel.setText("✅ Logged in as: " + userService.getCurrentUserName());
+    private void performLoginOrLogout() {
+        if (userService.isLoggedIn()) {
+            // 执行登出操作
+            userService.logout();
+            statusLabel.setText("❌ Logged out successfully.");
+            updateButtonState();
         } else {
-            statusLabel.setText("❌ Login failed." + loginUserModel.getErrorMsg());
+            // 执行登录操作
+            String username = usernameField.getText();
+            String password = new String(passwordField.getPassword());
+            String serverUrl = this.serverUrlField.getText();
+            if (!serverUrl.startsWith("http://") && !serverUrl.startsWith("https://")) {
+                statusLabel.setText("❌ Server URL must start with http:// or https://");
+                return;
+            }
+            if (username.isEmpty() || password.isEmpty()) {
+                statusLabel.setText("❌ Username or password cannot be empty.");
+                return;
+            }
+
+            LoginUserModel loginUserModel = userService.login(username, password, serverUrl);
+            if (loginUserModel.isSuccess()) {
+                userService.refreshCurrentUserName();
+                statusLabel.setText("✅ Logged in as: " + userService.getCurrentUserName());
+                updateButtonState();
+            } else {
+                statusLabel.setText("❌ Login failed." + loginUserModel.getErrorMsg());
+            }
         }
     }
 
@@ -155,11 +162,10 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
 
     @Override
     public boolean isModified() {
-        // 判断是否内容有变化，用于“Apply”按钮的启用状态
+        // 判断是否内容有变化，用于"Apply"按钮的启用状态
         return !usernameField.getText().equals(SettingsState.getInstance(project).getUsername())
                 || !new String(passwordField.getPassword()).equals(SettingsState.getInstance(project).getPassword())
-                || !serverUrlField.getText().equals(SettingsState.getInstance(project).getServerUrl())
-                ;
+                || !serverUrlField.getText().equals(SettingsState.getInstance(project).getServerUrl());
     }
 
     @Override
@@ -174,6 +180,7 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         usernameField.setText(SettingsState.getInstance(project).getUsername());
         passwordField.setText(SettingsState.getInstance(project).getPassword());
         serverUrlField.setText(SettingsState.getInstance(project).getServerUrl());
+        updateButtonState();
     }
 
     @Override
@@ -183,5 +190,21 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
     @Override
     public @NotNull @NonNls String getId() {
         return "metabaseProxy.settings";
+    }
+
+    private void updateButtonState() {
+        if (userService.isLoggedIn()) {
+            loginButton.setText("Logout");
+            // 登录后禁用输入框
+            usernameField.setEnabled(false);
+            passwordField.setEnabled(false);
+            serverUrlField.setEnabled(false);
+        } else {
+            loginButton.setText("Login");
+            // 登出后启用输入框
+            usernameField.setEnabled(true);
+            passwordField.setEnabled(true);
+            serverUrlField.setEnabled(true);
+        }
     }
 }

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.wei"
-version = "1.5"
+version = "1.6"
 
 repositories {
     mavenCentral()
@@ -32,6 +32,10 @@ intellijPlatform {
             untilBuild = ""
         }
         changeNotes = """
+        <h2>1.6</h2>
+        <ul>
+            <li>优化登录后无法logout 问题</li>
+        </ul>
         <h2>1.5</h2>
         <ul>
             <li>修改配置项保存为项目级别</li>

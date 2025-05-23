@@ -9,28 +9,24 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * @author deanwanghewei@gmail.com
- *  description
- * 使用 PersistentStateComponent 和 @Service 来保存用户设置
- * 来保存用户输入的用户名和密码
+ *         description
+ *         使用 PersistentStateComponent 和 @Service 来保存用户设置
+ *         来保存用户输入的用户名和密码
  * @date 2025年05月19日 11:14
  */
 @Service(Service.Level.PROJECT)
-@State(
-        name = "orgWeiMetabaseProxy",
-        storages = @Storage("orgWeiMetabaseProxySetting.xml")
-)
+@State(name = "orgWeiMetabaseProxy", storages = @Storage("orgWeiMetabaseProxySetting.xml"))
 public final class SettingsState implements PersistentStateComponent<SettingsState> {
 
     private String username = "";
     private String password = "";
     private String serverUrl = "";
-
+    private boolean isLoggedIn = false;
 
     // 注入方式获取实例（推荐）
     public static SettingsState getInstance(@NotNull com.intellij.openapi.project.Project project) {
         return project.getService(SettingsState.class);
     }
-
 
     @Override
     public @NotNull SettingsState getState() {
@@ -57,10 +53,20 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     public void setPassword(String password) {
         this.password = password;
     }
+
     public String getServerUrl() {
         return serverUrl;
     }
+
     public void setServerUrl(String serverUrl) {
         this.serverUrl = serverUrl;
+    }
+
+    public boolean isLoggedIn() {
+        return isLoggedIn;
+    }
+
+    public void setLoggedIn(boolean loggedIn) {
+        this.isLoggedIn = loggedIn;
     }
 }
