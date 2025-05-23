@@ -45,27 +45,17 @@ jobs:
             - name: Generate release notes
               id: release_notes
               run: |
-                  cat > release_notes.md << 'EOF'
+                  BUILD_TIME=$(date -u)
+                  cat > release_notes.md << EOF
                   🚀 **Metabase Proxy Plugin Release ${{ steps.tag.outputs.TAG_NAME }}**
 
-                  ## 📦 下载
-                  下载下方的插件包文件，在 IntelliJ IDEA 中安装即可使用。
-
-                  ## 📋 安装方法
-                  1. 下载 `.zip` 文件
-                  2. 打开 IntelliJ IDEA
-                  3. 进入 `File` → `Settings` → `Plugins`
-                  4. 点击齿轮图标 → `Install Plugin from Disk...`
-                  5. 选择下载的 `.zip` 文件
-                  6. 重启 IDE
-
-                  ## ✨ 使用方法
-                  1. 在 Settings 中填写 Metabase 地址和用户信息
-                  2. 选中要执行的 SQL，右键选择 "Run Metabase Query"
-                  3. 或使用快捷键执行查询
-
+                  ## 📦 feature
+                  区分输出时的各个信息的提示颜色区分。
+                
                   ---
-                  *自动构建时间: $(date -u)*
+                  *自动构建时间: ${BUILD_TIME}*
+                  *构建号: ${{ github.run_number }}*
+                  *提交SHA: ${{ github.sha }}*
                   EOF
 
             - name: Create Release

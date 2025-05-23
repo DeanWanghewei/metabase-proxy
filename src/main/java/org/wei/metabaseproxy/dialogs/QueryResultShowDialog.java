@@ -22,15 +22,16 @@ import java.util.List;
 public class QueryResultShowDialog {
     private static final Logger LOG = Logger.getInstance(QueryResultShowDialog.class);
 
-
     public QueryConsoleState showInitConsole(Project project, DatabaseModel databaseModel, String sql) {
         ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Metabase Proxy");
         if (toolWindow == null) {
-            toolWindow = ToolWindowManager.getInstance(project).registerToolWindow("Metabase Proxy", true, ToolWindowAnchor.BOTTOM);
+            toolWindow = ToolWindowManager.getInstance(project).registerToolWindow("Metabase Proxy", true,
+                    ToolWindowAnchor.BOTTOM);
         }
 
         ConsoleView consoleView = new ConsoleViewImpl(project, false);
-        Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(), "Query Result", false);
+        Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(),
+                "Query Result", false);
 
         toolWindow.getContentManager().addContent(content, 0);
         toolWindow.show(null);
@@ -38,15 +39,17 @@ public class QueryResultShowDialog {
         // 激活当前 content
 
         consoleView.clear();
-        consoleView.print("Query Database: \n" + databaseModel.getName() + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
-        consoleView.print("Query SQL: \n" + sql + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
+        consoleView.print("Query Database: ", ConsoleViewContentType.LOG_INFO_OUTPUT);
+        consoleView.print(databaseModel.getName() + "\n\n", ConsoleViewContentType.NORMAL_OUTPUT);
+        consoleView.print("Query SQL: ", ConsoleViewContentType.LOG_WARNING_OUTPUT);
+        consoleView.print(sql + "\n\n", ConsoleViewContentType.NORMAL_OUTPUT);
 
         return new QueryConsoleState(toolWindow, consoleView);
     }
 
-
     public void showResult(Project project, QueryConsoleState consoleState, QueryResultModel queryResult) {
-        consoleState.getConsoleView().print("Query Result: \n", ConsoleViewContentType.NORMAL_OUTPUT);
+        consoleState.getConsoleView().print("Query Result: ", ConsoleViewContentType.LOG_VERBOSE_OUTPUT);
+        consoleState.getConsoleView().print("\n", ConsoleViewContentType.NORMAL_OUTPUT);
         if (queryResult.isSuccess()) {
             showResult(project, consoleState, queryResult.getHead(), queryResult.getData());
         } else {
@@ -54,8 +57,8 @@ public class QueryResultShowDialog {
         }
     }
 
-
-    public void showResult(Project project, QueryConsoleState consoleState, List<String> head, List<List<String>> data) {
+    public void showResult(Project project, QueryConsoleState consoleState, List<String> head,
+            List<List<String>> data) {
         ConsoleView consoleView = consoleState.getConsoleView();
         // 构建并打印表格内容
         String tableOutput = buildTable(head, data);
@@ -66,7 +69,6 @@ public class QueryResultShowDialog {
     public void showError(Project project, QueryConsoleState consoleState, String errorMsg) {
         consoleState.getConsoleView().print(errorMsg, ConsoleViewContentType.ERROR_OUTPUT);
     }
-
 
     private String buildTable(List<String> head, List<List<String>> data) {
         StringBuilder sb = new StringBuilder();
@@ -147,7 +149,7 @@ public class QueryResultShowDialog {
 
     /**
      * 生成表格数据行
-     * |  单元格内容  |  单元格内容  |
+     * | 单元格内容 | 单元格内容 |
      */
     private void appendRow(StringBuilder sb, List<String> row, int[] columnWidths) {
         sb.append("|");
@@ -167,7 +169,8 @@ public class QueryResultShowDialog {
     }
 
     private static String safeReplace(String input) {
-        if (input == null) return "NULL";
+        if (input == null)
+            return "NULL";
         return input.replace("\n", " ").replace("\r", " ").replace("\t", " ");
     }
 
