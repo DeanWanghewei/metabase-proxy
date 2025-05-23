@@ -1,0 +1,81 @@
+name: Create Release on Tag
+
+on:
+    push:
+        tags:
+            - "v*" # 匹配以 v 开头的 tag，如 v1.0, v2.1 等
+
+jobs:
+    create-release:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            packages: write
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up JDK 21
+              uses: actions/setup-java@v4
+              with:
+                  java-version: "21"
+                  distribution: "temurin"
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v4
+
+            - name: Make gradlew executable
+              run: chmod +x ./gradlew
+
+            - name: Build plugin
+              run: ./gradlew buildPlugin
+
+            - name: Extract tag name
+              id: tag
+              run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+            - name: Get plugin artifact path
+              id: plugin_path
+              run: |
+                  PLUGIN_FILE=$(find build/distributions -name "*.zip" | head -1)
+                  echo "PLUGIN_FILE=$PLUGIN_FILE" >> $GITHUB_OUTPUT
+                  echo "PLUGIN_NAME=$(basename $PLUGIN_FILE)" >> $GITHUB_OUTPUT
+
+            - name: Generate release notes
+              id: release_notes
+              run: |
+                  cat > release_notes.md << 'EOF'
+                  🚀 **Metabase Proxy Plugin Release ${{ steps.tag.outputs.TAG_NAME }}**
+
+                  ## 📦 下载
+                  下载下方的插件包文件，在 IntelliJ IDEA 中安装即可使用。
+
+                  ## 📋 安装方法
+                  1. 下载 `.zip` 文件
+                  2. 打开 IntelliJ IDEA
+                  3. 进入 `File` → `Settings` → `Plugins`
+                  4. 点击齿轮图标 → `Install Plugin from Disk...`
+                  5. 选择下载的 `.zip` 文件
+                  6. 重启 IDE
+
+                  ## ✨ 使用方法
+                  1. 在 Settings 中填写 Metabase 地址和用户信息
+                  2. 选中要执行的 SQL，右键选择 "Run Metabase Query"
+                  3. 或使用快捷键执行查询
+
+                  ---
+                  *自动构建时间: $(date -u)*
+                  EOF
+
+            - name: Create Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.tag.outputs.TAG_NAME }}
+                  name: Release ${{ steps.tag.outputs.TAG_NAME }}
+                  body_path: release_notes.md
+                  files: ${{ steps.plugin_path.outputs.PLUGIN_FILE }}
+                  draft: false
+                  prerelease: false
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
