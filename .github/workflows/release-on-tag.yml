@@ -50,12 +50,11 @@ jobs:
                   🚀 **Metabase Proxy Plugin Release ${{ steps.tag.outputs.TAG_NAME }}**
 
                   ## 📦 feature
-                  区分输出时的各个信息的提示颜色区分。
+                  添加配置项: 结果展示方式
+                  ## fix
+                  - 修复没有选择SQL时.当自动检测到文件末尾时越界问题.
                 
                   ---
-                  *自动构建时间: ${BUILD_TIME}*
-                  *构建号: ${{ github.run_number }}*
-                  *提交SHA: ${{ github.sha }}*
                   EOF
 
             - name: Create Release
