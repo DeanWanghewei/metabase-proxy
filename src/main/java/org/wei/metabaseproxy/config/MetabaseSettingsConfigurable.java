@@ -13,6 +13,9 @@ import org.wei.metabaseproxy.service.MetabaseProxyService;
 import javax.swing.*;
 import java.awt.*;
 
+import static org.wei.metabaseproxy.constants.ResultShowConstant.RESULT_VIEW_TYPE_TABLE;
+import static org.wei.metabaseproxy.constants.ResultShowConstant.RESULT_VIEW_TYPE_TEXT;
+
 /**
  * @author deanwanghewei@gmail.com
  *         description
@@ -25,6 +28,7 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
     private JTextField serverUrlField;
     private JButton loginButton;
     private JLabel statusLabel;
+    private JComboBox<String> resultViewTypeComboBox;
 
     private final Project project;
     private final MetabaseProxyService userService;
@@ -87,6 +91,14 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         serverUrlField = new JTextField(40); // 初始列数
         gbc.gridx = 1;
         panel.add(serverUrlField, gbc);
+
+        // 结果输出方式选择
+        gbc.gridy++;
+        gbc.gridx = 0;
+        panel.add(new JLabel("结果输出方式:"), gbc);
+        gbc.gridx = 1;
+        resultViewTypeComboBox = new JComboBox<>(new String[] { RESULT_VIEW_TYPE_TEXT, RESULT_VIEW_TYPE_TABLE });
+        panel.add(resultViewTypeComboBox, gbc);
 
         // 登录按钮
         gbc.gridy++;
@@ -165,7 +177,9 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         // 判断是否内容有变化，用于"Apply"按钮的启用状态
         return !usernameField.getText().equals(SettingsState.getInstance(project).getUsername())
                 || !new String(passwordField.getPassword()).equals(SettingsState.getInstance(project).getPassword())
-                || !serverUrlField.getText().equals(SettingsState.getInstance(project).getServerUrl());
+                || !serverUrlField.getText().equals(SettingsState.getInstance(project).getServerUrl())
+                || !resultViewTypeComboBox.getSelectedItem()
+                        .equals(SettingsState.getInstance(project).getResultViewType());
     }
 
     @Override
@@ -173,6 +187,7 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         SettingsState.getInstance(project).setUsername(usernameField.getText());
         SettingsState.getInstance(project).setPassword(new String(passwordField.getPassword()));
         SettingsState.getInstance(project).setServerUrl(serverUrlField.getText());
+        SettingsState.getInstance(project).setResultViewType((String) resultViewTypeComboBox.getSelectedItem());
     }
 
     @Override
@@ -180,6 +195,7 @@ public class MetabaseSettingsConfigurable implements SearchableConfigurable {
         usernameField.setText(SettingsState.getInstance(project).getUsername());
         passwordField.setText(SettingsState.getInstance(project).getPassword());
         serverUrlField.setText(SettingsState.getInstance(project).getServerUrl());
+        resultViewTypeComboBox.setSelectedItem(SettingsState.getInstance(project).getResultViewType());
         updateButtonState();
     }
 

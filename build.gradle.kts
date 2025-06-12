@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.wei"
-version = "1.6"
+version = "1.7"
 
 repositories {
     mavenCentral()
@@ -32,6 +32,10 @@ intellijPlatform {
             untilBuild = ""
         }
         changeNotes = """
+        <h2>1.7</h2>
+        <ul>
+            <li>设置中添加了查询结果展示为表格结构</li>
+        </ul>
         <h2>1.6</h2>
         <ul>
             <li>优化登录后无法logout 问题</li>

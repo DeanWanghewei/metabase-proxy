@@ -14,6 +14,8 @@ import org.wei.metabaseproxy.model.QueryResultModel;
 
 import java.util.List;
 
+import static org.wei.metabaseproxy.constants.ResultShowConstant.TOOL_WINDOW_ID;
+
 /**
  * @author deanwanghewei@gmail.com
  * @description
@@ -23,15 +25,15 @@ public class QueryResultShowDialog {
     private static final Logger LOG = Logger.getInstance(QueryResultShowDialog.class);
 
     public QueryConsoleState showInitConsole(Project project, DatabaseModel databaseModel, String sql) {
-        ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow("Metabase Proxy");
+        ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID);
         if (toolWindow == null) {
-            toolWindow = ToolWindowManager.getInstance(project).registerToolWindow("Metabase Proxy", true,
+            toolWindow = ToolWindowManager.getInstance(project).registerToolWindow(TOOL_WINDOW_ID, true,
                     ToolWindowAnchor.BOTTOM);
         }
 
         ConsoleView consoleView = new ConsoleViewImpl(project, false);
         Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(),
-                "Query Result", false);
+                TOOL_WINDOW_ID, true);
 
         toolWindow.getContentManager().addContent(content, 0);
         toolWindow.show(null);

@@ -15,9 +15,8 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.wei.metabaseproxy.config.CurrentUserVarState;
-import org.wei.metabaseproxy.dialogs.QueryConsoleState;
-import org.wei.metabaseproxy.dialogs.QueryResultShowDialog;
-import org.wei.metabaseproxy.dialogs.RunSqlParamsDialog;
+import org.wei.metabaseproxy.config.SettingsState;
+import org.wei.metabaseproxy.dialogs.*;
 import org.wei.metabaseproxy.model.DatabaseModel;
 import org.wei.metabaseproxy.model.QueryResultModel;
 import org.wei.metabaseproxy.model.RunSqlParamsModel;
@@ -28,6 +27,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.wei.metabaseproxy.constants.ResultShowConstant.RESULT_VIEW_TYPE_TEXT;
 
 /**
  * @author deanwanghewei@gmail.com
@@ -40,40 +41,37 @@ public class MetabaseProxyQueryAction extends AnAction {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-        // 显示查询结果或者错误结果
         doAction(anActionEvent, false);
     }
 
-    /**
-     * 执行动作
-     *
-     * @param anActionEvent     事件
-     * @param defaultShowDialog 默认显示对话框
-     * @return
-     */
-    protected void doAction(@NotNull AnActionEvent anActionEvent, boolean defaultShowDialog) {
-        Project project = anActionEvent.getProject();
+    protected void doAction(@NotNull AnActionEvent event, boolean defaultShowDialog) {
+        Project project = event.getProject();
         if (project == null) {
             Messages.showErrorDialog("无法获取项目信息", "错误");
             return;
         }
-
         MetabaseProxyService proxyService = project.getService(MetabaseProxyService.class);
-
-        // 获取用户选中的内容
-        String selectedText = getQuerySql(anActionEvent);
+        String selectedText = getQuerySql(event);
         if (selectedText == null || selectedText.isEmpty()) {
             Messages.showErrorDialog("请选择要查询的内容", "错误");
             return;
         }
-
         if (!proxyService.isLoggedIn()) {
             Messages.showErrorDialog("请先在设置中登录MetaBaseProxy", "错误");
             return;
         }
+        QueryContext ctx = resolveQueryParams(event, proxyService, selectedText, defaultShowDialog);
+        if (ctx == null)
+            return;
+        showQueryResult(event, ctx, proxyService);
+    }
 
+    /**
+     * 处理变量替换、参数弹窗，返回查询上下文
+     */
+    private QueryContext resolveQueryParams(AnActionEvent event, MetabaseProxyService proxyService, String selectedText,
+            boolean defaultShowDialog) {
         DatabaseModel cacheDatabase = CurrentUserVarState.getInstance().getCacheDatabaseSelected();
-
         Matcher matcher = VAR_PATTERN.matcher(selectedText);
         HashMap<String, String> varCache = new HashMap<>();
         HashSet<String> notCacheVarList = new HashSet<>();
@@ -87,20 +85,16 @@ public class MetabaseProxyQueryAction extends AnAction {
             }
         }
         if (!notCacheVarList.isEmpty() || cacheDatabase == null || defaultShowDialog) {
-            // 弹窗,让用户输入变量值
-            // 查询数据库
             List<DatabaseModel> databaseModelList = proxyService.listUserDatabases();
             RunSqlParamsModel runSqlParamsModel = new RunSqlParamsModel();
             runSqlParamsModel.setSelectedDatabase(cacheDatabase);
             runSqlParamsModel.setUserInputVarList(notCacheVarList);
             runSqlParamsModel.setUserVarMap(varCache);
-
-            RunSqlParamsDialog dialog = new RunSqlParamsDialog(anActionEvent.getProject(), runSqlParamsModel,
+            RunSqlParamsDialog dialog = new RunSqlParamsDialog(event.getProject(), runSqlParamsModel,
                     databaseModelList);
             dialog.show();
-
             if (dialog.getExitCode() != DialogWrapper.OK_EXIT_CODE) {
-                return;
+                return null;
             }
             RunSqlParamsModel userResetParams = dialog.getUserResetParams();
             cacheDatabase = userResetParams.getSelectedDatabase();
@@ -108,36 +102,64 @@ public class MetabaseProxyQueryAction extends AnAction {
             varCache.forEach((k, v) -> CurrentUserVarState.getInstance().getUserVarMap().put(k, v));
             CurrentUserVarState.getInstance().setCacheDatabaseSelected(cacheDatabase);
         }
-
+        String finalSql = selectedText;
         for (String s : varCache.keySet()) {
-            selectedText = selectedText.replace("${" + s + "}", varCache.get(s));
+            finalSql = finalSql.replace("${" + s + "}", varCache.get(s));
         }
+        return new QueryContext(cacheDatabase, formatSql(finalSql));
+    }
 
-        QueryResultShowDialog queryResultShowDialog = new QueryResultShowDialog();
-        String finalSelectedText = formatSql(selectedText);
-        DatabaseModel finalCacheDatabase = cacheDatabase;
-        final MetabaseProxyService finalProxyService = proxyService;
-        // 先显示控制台
-        QueryConsoleState consoleState = queryResultShowDialog.showInitConsole(anActionEvent.getProject(),
-                finalCacheDatabase, finalSelectedText);
-
+    /**
+     * 统一处理结果展示
+     */
+    private void showQueryResult(AnActionEvent event, QueryContext ctx, MetabaseProxyService proxyService) {
+        Project project = event.getProject();
+        String resultViewType = SettingsState.getInstance(project).getResultViewType();
+        Runnable runQuery = () -> {
+            try {
+                QueryResultModel resultModel = proxyService.query(ctx.sql, ctx.database.getId());
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    if (RESULT_VIEW_TYPE_TEXT.equals(resultViewType)) {
+                        QueryResultShowDialog queryDialog = new QueryResultShowDialog();
+                        QueryConsoleState consoleState = queryDialog.showInitConsole(project, ctx.database, ctx.sql);
+                        queryDialog.showResult(project, consoleState, resultModel);
+                    } else {
+                        QueryResultShowTableDialog queryDialog = new QueryResultShowTableDialog();
+                        QueryTableConsoleState tableState = queryDialog.showInitConsole(project, ctx.database, ctx.sql);
+                        queryDialog.showResult(project, tableState, resultModel);
+                    }
+                });
+            } catch (Exception e) {
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    if (RESULT_VIEW_TYPE_TEXT.equals(resultViewType)) {
+                        QueryResultShowDialog queryDialog = new QueryResultShowDialog();
+                        QueryConsoleState consoleState = queryDialog.showInitConsole(project, ctx.database, ctx.sql);
+                        queryDialog.showError(project, consoleState, "查询失败错误: " + e.getMessage());
+                    } else {
+                        QueryResultShowTableDialog queryDialog = new QueryResultShowTableDialog();
+                        QueryTableConsoleState tableState = queryDialog.showInitConsole(project, ctx.database, ctx.sql);
+                        queryDialog.showError(project, tableState, "查询失败错误: " + e.getMessage());
+                    }
+                });
+            }
+        };
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "Metabase Proxy Query") {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                try {
-                    // 执行耗时网络请求
-                    QueryResultModel resultModel = finalProxyService.query(finalSelectedText,
-                            finalCacheDatabase.getId());
-
-                    // 回到 UI 线程更新内容
-                    ApplicationManager.getApplication().invokeLater(() -> queryResultShowDialog
-                            .showResult(anActionEvent.getProject(), consoleState, resultModel));
-                } catch (Exception e) {
-                    ApplicationManager.getApplication().invokeLater(() -> queryResultShowDialog
-                            .showError(anActionEvent.getProject(), consoleState, "查询失败错误: " + e.getMessage()));
-                }
+                runQuery.run();
             }
         });
+    }
+
+    /** 查询上下文 */
+    private static class QueryContext {
+        final DatabaseModel database;
+        final String sql;
+
+        QueryContext(DatabaseModel database, String sql) {
+            this.database = database;
+            this.sql = sql;
+        }
     }
 
     protected String getQuerySql(AnActionEvent event) {

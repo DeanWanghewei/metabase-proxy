@@ -7,6 +7,9 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 
+import static org.wei.metabaseproxy.constants.ResultShowConstant.RESULT_VIEW_TYPE_TABLE;
+import static org.wei.metabaseproxy.constants.ResultShowConstant.RESULT_VIEW_TYPE_TEXT;
+
 /**
  * @author deanwanghewei@gmail.com
  *         description
@@ -22,6 +25,7 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
     private String password = "";
     private String serverUrl = "";
     private boolean isLoggedIn = false;
+    private String resultViewType = RESULT_VIEW_TYPE_TEXT; // 可选值: "component", "console"
 
     // 注入方式获取实例（推荐）
     public static SettingsState getInstance(@NotNull com.intellij.openapi.project.Project project) {
@@ -68,5 +72,13 @@ public final class SettingsState implements PersistentStateComponent<SettingsSta
 
     public void setLoggedIn(boolean loggedIn) {
         this.isLoggedIn = loggedIn;
+    }
+
+    public String getResultViewType() {
+        return resultViewType;
+    }
+
+    public void setResultViewType(String resultViewType) {
+        this.resultViewType = resultViewType;
     }
 }
