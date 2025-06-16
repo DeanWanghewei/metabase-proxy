@@ -17,15 +17,22 @@ public class QueryTableConsoleState {
     private final String sql;
     private final JPanel mainPanel;
     private JPanel resultPanel;
+    private final JTabbedPane tabbedPane;
 
     public QueryTableConsoleState(ToolWindow toolWindow, Content content, String dbName, String sql, JPanel mainPanel,
-            JPanel resultPanel) {
+            JPanel resultPanel, JTabbedPane tabbedPane) {
         this.toolWindow = toolWindow;
         this.content = content;
         this.dbName = dbName;
         this.sql = sql;
         this.mainPanel = mainPanel;
         this.resultPanel = resultPanel;
+        this.tabbedPane = tabbedPane;
+    }
+
+    public QueryTableConsoleState(ToolWindow toolWindow, Content content, String dbName, String sql, JPanel mainPanel,
+            JPanel resultPanel) {
+        this(toolWindow, content, dbName, sql, mainPanel, resultPanel, null);
     }
 
     public ToolWindow getToolWindow() {
@@ -54,5 +61,9 @@ public class QueryTableConsoleState {
 
     public void setResultPanel(JPanel resultPanel) {
         this.resultPanel = resultPanel;
+    }
+
+    public JTabbedPane getTabbedPane() {
+        return tabbedPane;
     }
 }

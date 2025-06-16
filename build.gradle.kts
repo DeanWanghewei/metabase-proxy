@@ -32,6 +32,10 @@ intellijPlatform {
             untilBuild = ""
         }
         changeNotes = """
+        <h2>1.8</h2>
+        <ul>
+            <li>优化表格展示</li>
+        </ul>
         <h2>1.7</h2>
         <ul>
             <li>设置中添加了查询结果展示为表格结构</li>

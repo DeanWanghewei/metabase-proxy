@@ -24,45 +24,58 @@ public class QueryResultShowTableDialog {
     public static QueryTableConsoleState showInitConsole(Project project, DatabaseModel databaseModel, String sql) {
         ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(ResultShowConstant.TOOL_WINDOW_ID);
         if (toolWindow == null) {
-            toolWindow = ToolWindowManager.getInstance(project).registerToolWindow(ResultShowConstant.TOOL_WINDOW_ID, true,
+            toolWindow = ToolWindowManager.getInstance(project).registerToolWindow(ResultShowConstant.TOOL_WINDOW_ID,
+                    true,
                     ToolWindowAnchor.BOTTOM);
         }
-        // 创建主面板，垂直布局
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-
-        JLabel dbLabel = new JLabel("Query Database: " + databaseModel.getName());
+        // --- 新布局：左侧tab切换 ---
+        // 1. Query Database 区域
+        JLabel dbLabel = new JLabel(databaseModel.getName());
         dbLabel.setAlignmentX(JPanel.LEFT_ALIGNMENT);
-        mainPanel.add(dbLabel);
-        mainPanel.add(Box.createVerticalStrut(10));
-        JLabel sqlLabel = new JLabel("Query SQL:");
-        sqlLabel.setAlignmentX(JPanel.LEFT_ALIGNMENT);
-        mainPanel.add(sqlLabel);
+        JPanel dbPanel = new JPanel(new BorderLayout());
+        dbPanel.add(dbLabel, BorderLayout.NORTH);
+
+        // 2. Query SQL 区域
         JTextArea sqlArea = new JTextArea(sql);
         sqlArea.setEditable(false);
         sqlArea.setLineWrap(true);
         sqlArea.setWrapStyleWord(true);
         sqlArea.setAlignmentX(JPanel.LEFT_ALIGNMENT);
         JScrollPane sqlScrollPane = new JScrollPane(sqlArea);
-        sqlScrollPane.setAlignmentX(JPanel.LEFT_ALIGNMENT);
         sqlScrollPane.setPreferredSize(new java.awt.Dimension(400, 80));
-        mainPanel.add(sqlScrollPane);
-        mainPanel.add(Box.createVerticalStrut(10));
+        JPanel sqlPanel = new JPanel(new BorderLayout());
+        sqlPanel.add(sqlScrollPane, BorderLayout.CENTER);
 
-        // 结果区 resultPanel
-        JPanel resultPanel = new JPanel();
-        resultPanel.setLayout(new BorderLayout());
-        mainPanel.add(resultPanel);
+        // 3. Query Result 区域
+        JPanel resultPanel = new JPanel(new BorderLayout());
+        // resultPanel 由 showTable/showError 填充
+
+        // JTabbedPane 左侧tab
+        JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
+        tabbedPane.addTab("Query Database", dbPanel);
+        tabbedPane.addTab("Query SQL", sqlPanel);
+        tabbedPane.addTab("Query Result", resultPanel);
+        tabbedPane.setSelectedIndex(1); // 默认选中 Query SQL
+
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
         JScrollPane scrollPane = new JScrollPane(mainPanel);
-        Content content = toolWindow.getContentManager().getFactory().createContent(scrollPane, ResultShowConstant.TOOL_WINDOW_ID, true);
+        Content content = toolWindow.getContentManager().getFactory().createContent(scrollPane,
+                ResultShowConstant.TOOL_WINDOW_ID, true);
         toolWindow.getContentManager().addContent(content, 0);
         toolWindow.show(null);
         toolWindow.getContentManager().setSelectedContent(content);
-        return new QueryTableConsoleState(toolWindow, content, databaseModel.getName(), sql, mainPanel, resultPanel);
+        // 传递tabbedPane
+        return new QueryTableConsoleState(toolWindow, content, databaseModel.getName(), sql, mainPanel, resultPanel,
+                tabbedPane);
     }
 
     public static void showResult(Project project, QueryTableConsoleState state, QueryResultModel queryResult) {
+        // 自动切换到 Query Result tab
+        if (state.getTabbedPane() != null) {
+            state.getTabbedPane().setSelectedIndex(2);
+        }
         if (queryResult.isSuccess()) {
             showTable(project, state, queryResult.getHead(), queryResult.getData());
         } else {
@@ -72,6 +85,7 @@ public class QueryResultShowTableDialog {
 
     public static void showTable(Project project, QueryTableConsoleState state, List<String> head,
             List<List<String>> data) {
+        // 自动切换到 Query Result tab
         // 只更新结果区 resultPanel
         JPanel resultPanel = state.getResultPanel();
         resultPanel.removeAll();

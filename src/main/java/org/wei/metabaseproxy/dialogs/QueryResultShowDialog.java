@@ -16,6 +16,9 @@ import java.util.List;
 
 import static org.wei.metabaseproxy.constants.ResultShowConstant.TOOL_WINDOW_ID;
 
+import javax.swing.*;
+import java.awt.BorderLayout;
+
 /**
  * @author deanwanghewei@gmail.com
  * @description
@@ -24,6 +27,15 @@ import static org.wei.metabaseproxy.constants.ResultShowConstant.TOOL_WINDOW_ID;
 public class QueryResultShowDialog {
     private static final Logger LOG = Logger.getInstance(QueryResultShowDialog.class);
 
+    private JTabbedPane tabbedPane;
+    private JPanel dbPanel;
+    private JPanel sqlPanel;
+    private JPanel resultPanel;
+    private JPanel mainPanel;
+    private JTextArea sqlArea;
+    private JLabel dbLabel;
+    private JTextArea resultArea;
+
     public QueryConsoleState showInitConsole(Project project, DatabaseModel databaseModel, String sql) {
         ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID);
         if (toolWindow == null) {
@@ -31,29 +43,57 @@ public class QueryResultShowDialog {
                     ToolWindowAnchor.BOTTOM);
         }
 
-        ConsoleView consoleView = new ConsoleViewImpl(project, false);
-        Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(),
-                TOOL_WINDOW_ID, true);
+        // 1. Query Database 区域
+        dbLabel = new JLabel( databaseModel.getName());
+        dbLabel.setAlignmentX(JPanel.LEFT_ALIGNMENT);
+        dbPanel = new JPanel(new BorderLayout());
+        dbPanel.add(dbLabel, BorderLayout.NORTH);
 
+        // 2. Query SQL 区域
+        sqlArea = new JTextArea(sql);
+        sqlArea.setEditable(false);
+        sqlArea.setLineWrap(true);
+        sqlArea.setWrapStyleWord(true);
+        sqlArea.setAlignmentX(JPanel.LEFT_ALIGNMENT);
+        JScrollPane sqlScrollPane = new JScrollPane(sqlArea);
+        sqlScrollPane.setPreferredSize(new java.awt.Dimension(400, 80));
+        sqlPanel = new JPanel(new BorderLayout());
+        sqlPanel.add(sqlScrollPane, BorderLayout.CENTER);
+
+        // 3. Query Result 区域
+        resultPanel = new JPanel(new BorderLayout());
+        resultArea = new JTextArea();
+        resultArea.setEditable(false);
+        JScrollPane resultScrollPane = new JScrollPane(resultArea);
+        resultPanel.add(resultScrollPane, BorderLayout.CENTER);
+
+        // JTabbedPane 左侧tab
+        tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
+        tabbedPane.addTab("Query Database", dbPanel);
+        tabbedPane.addTab("Query SQL", sqlPanel);
+        tabbedPane.addTab("Query Result", resultPanel);
+        tabbedPane.setSelectedIndex(1); // 默认选中 Query SQL
+
+        mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(tabbedPane, BorderLayout.CENTER);
+
+        JScrollPane scrollPane = new JScrollPane(mainPanel);
+        Content content = toolWindow.getContentManager().getFactory().createContent(scrollPane,
+                TOOL_WINDOW_ID, true);
         toolWindow.getContentManager().addContent(content, 0);
         toolWindow.show(null);
         toolWindow.getContentManager().setSelectedContent(content);
-        // 激活当前 content
-
-        consoleView.clear();
-        consoleView.print("Query Database: ", ConsoleViewContentType.LOG_INFO_OUTPUT);
-        consoleView.print(databaseModel.getName() + "\n\n", ConsoleViewContentType.NORMAL_OUTPUT);
-        consoleView.print("Query SQL: ", ConsoleViewContentType.LOG_WARNING_OUTPUT);
-        consoleView.print(sql + "\n\n", ConsoleViewContentType.NORMAL_OUTPUT);
-
-        return new QueryConsoleState(toolWindow, consoleView);
+        return new QueryConsoleState(toolWindow, null); // 这里的ConsoleView已不再使用
     }
 
     public void showResult(Project project, QueryConsoleState consoleState, QueryResultModel queryResult) {
-        consoleState.getConsoleView().print("Query Result: ", ConsoleViewContentType.LOG_VERBOSE_OUTPUT);
-        consoleState.getConsoleView().print("\n", ConsoleViewContentType.NORMAL_OUTPUT);
+        // 自动切换到 Query Result tab
+        if (tabbedPane != null) {
+            tabbedPane.setSelectedIndex(2);
+        }
+        resultArea.setText("");
         if (queryResult.isSuccess()) {
-            showResult(project, consoleState, queryResult.getHead(), queryResult.getData());
+            resultArea.append(buildTable(queryResult.getHead(), queryResult.getData()));
         } else {
             showError(project, consoleState, queryResult.getErrorMsg());
         }
@@ -61,15 +101,20 @@ public class QueryResultShowDialog {
 
     public void showResult(Project project, QueryConsoleState consoleState, List<String> head,
             List<List<String>> data) {
-        ConsoleView consoleView = consoleState.getConsoleView();
-        // 构建并打印表格内容
-        String tableOutput = buildTable(head, data);
-        consoleView.print(tableOutput, ConsoleViewContentType.NORMAL_OUTPUT);
-
+        if (tabbedPane != null) {
+            tabbedPane.setSelectedIndex(2);
+        }
+        resultArea.setText("");
+        resultArea.append(buildTable(head, data));
     }
 
     public void showError(Project project, QueryConsoleState consoleState, String errorMsg) {
-        consoleState.getConsoleView().print(errorMsg, ConsoleViewContentType.ERROR_OUTPUT);
+        if (tabbedPane != null) {
+            tabbedPane.setSelectedIndex(2);
+        }
+        resultArea.setText("");
+        resultArea.setForeground(java.awt.Color.RED);
+        resultArea.append(errorMsg);
     }
 
     private String buildTable(List<String> head, List<List<String>> data) {
