@@ -1,4 +1,4 @@
-package org.wei.metabaseproxy.metabase;
+package org.wei.metabaseproxy.client.metabase;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.annotations.SerializedName;

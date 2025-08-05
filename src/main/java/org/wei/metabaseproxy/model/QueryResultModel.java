@@ -1,7 +1,7 @@
 package org.wei.metabaseproxy.model;
 
-import org.wei.metabaseproxy.metabase.ResponseQuery;
-import org.wei.metabaseproxy.metabase.ResponseQueryDataResultMetaDataColumns;
+import org.wei.metabaseproxy.client.metabase.ResponseQuery;
+import org.wei.metabaseproxy.client.metabase.ResponseQueryDataResultMetaDataColumns;
 
 import java.util.ArrayList;
 import java.util.List;

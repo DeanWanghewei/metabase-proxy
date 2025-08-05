@@ -3,7 +3,7 @@ package org.wei.metabaseproxy.service;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
 import org.wei.metabaseproxy.config.SettingsState;
-import org.wei.metabaseproxy.metabase.*;
+import org.wei.metabaseproxy.client.metabase.*;
 import org.wei.metabaseproxy.model.DatabaseModel;
 import org.wei.metabaseproxy.model.LoginUserModel;
 import org.wei.metabaseproxy.model.QueryResultModel;

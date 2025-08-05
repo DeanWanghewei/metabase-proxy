@@ -11,7 +11,7 @@ import org.wei.metabaseproxy.model.QueryResultModel;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.BorderLayout;
+import java.awt.*;
 import java.util.List;
 
 /**
@@ -24,9 +24,7 @@ public class QueryResultShowTableDialog {
     public static QueryTableConsoleState showInitConsole(Project project, DatabaseModel databaseModel, String sql) {
         ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(ResultShowConstant.TOOL_WINDOW_ID);
         if (toolWindow == null) {
-            toolWindow = ToolWindowManager.getInstance(project).registerToolWindow(ResultShowConstant.TOOL_WINDOW_ID,
-                    true,
-                    ToolWindowAnchor.BOTTOM);
+            toolWindow = ToolWindowManager.getInstance(project).registerToolWindow(ResultShowConstant.TOOL_WINDOW_ID, true, ToolWindowAnchor.BOTTOM);
         }
         // --- 新布局：左侧tab切换 ---
         // 1. Query Database 区域
@@ -61,14 +59,12 @@ public class QueryResultShowTableDialog {
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
         JScrollPane scrollPane = new JScrollPane(mainPanel);
-        Content content = toolWindow.getContentManager().getFactory().createContent(scrollPane,
-                ResultShowConstant.TOOL_WINDOW_ID, true);
+        Content content = toolWindow.getContentManager().getFactory().createContent(scrollPane, ResultShowConstant.TOOL_WINDOW_ID, true);
         toolWindow.getContentManager().addContent(content, 0);
         toolWindow.show(null);
         toolWindow.getContentManager().setSelectedContent(content);
         // 传递tabbedPane
-        return new QueryTableConsoleState(toolWindow, content, databaseModel.getName(), sql, mainPanel, resultPanel,
-                tabbedPane);
+        return new QueryTableConsoleState(toolWindow, content, databaseModel.getName(), sql, mainPanel, resultPanel, tabbedPane);
     }
 
     public static void showResult(Project project, QueryTableConsoleState state, QueryResultModel queryResult) {
@@ -83,8 +79,7 @@ public class QueryResultShowTableDialog {
         }
     }
 
-    public static void showTable(Project project, QueryTableConsoleState state, List<String> head,
-            List<List<String>> data) {
+    public static void showTable(Project project, QueryTableConsoleState state, List<String> head, List<List<String>> data) {
         // 自动切换到 Query Result tab
         // 只更新结果区 resultPanel
         JPanel resultPanel = state.getResultPanel();

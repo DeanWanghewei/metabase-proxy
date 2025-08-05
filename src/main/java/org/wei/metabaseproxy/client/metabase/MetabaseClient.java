@@ -1,4 +1,4 @@
-package org.wei.metabaseproxy.metabase;
+package org.wei.metabaseproxy.client.metabase;
 
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;

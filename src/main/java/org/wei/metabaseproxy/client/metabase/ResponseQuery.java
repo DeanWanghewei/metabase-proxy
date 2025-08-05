@@ -1,4 +1,4 @@
-package org.wei.metabaseproxy.metabase;
+package org.wei.metabaseproxy.client.metabase;
 
 /**
  * @author deanwanghewei@gmail.com

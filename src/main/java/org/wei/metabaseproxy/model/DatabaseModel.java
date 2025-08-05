@@ -1,7 +1,7 @@
 package org.wei.metabaseproxy.model;
 
 import org.jetbrains.annotations.NotNull;
-import org.wei.metabaseproxy.metabase.ResponseDatabase;
+import org.wei.metabaseproxy.client.metabase.ResponseDatabase;
 
 /**
  * @author deanwanghewei@gmail.com
